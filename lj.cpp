@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <x86intrin.h>
@@ -6,7 +7,7 @@ enum { X,
        Y,
        Z };
 
-const int ND = 3;                                  // FCCの格子数
+const int ND = 10;                                 // FCCの格子数
 const int N = ND * ND * ND * 4;                    //全粒指数
 double __attribute__((aligned(32))) q[N][4] = {};  //座標
 double __attribute__((aligned(32))) p[N][4] = {};  //運動量
@@ -88,12 +89,34 @@ void calc_force_simple(void) {
 void calc_force_simd(void) {
   for (int i = 0; i < N - 1; i++) {
     // i粒子の座標と運動量を受け取っておく (内側のループでiは変化しないから)
+
+    // 4成分をまとめてロードする
+    __m256d vqi = _mm256_load_pd((double *)(q + i));
+
+    // まとめたまま計算した方が早いが、デバッグのために各成分にバラす (pも同様)
+    double qix = vqi[X];
+    double qiy = vqi[Y];
+    double qiz = vqi[Z];
+
+    /*
+    上記のコードは、以下のコードをSIMD化したもの
     double qix = q[i][X];
     double qiy = q[i][Y];
     double qiz = q[i][Z];
+    */
+
+    __m256d vpi = _mm256_load_pd((double *)(p + i));
+    double pix = vpi[X];
+    double piy = vpi[Y];
+    double piz = vpi[Z];
+
+    /*
+    上記のコードは、以下のコードをSIMD化したもの
     double pix = p[i][X];
     double piy = p[i][Y];
     double piz = p[i][Z];
+    */
+
     for (int j = i + 1; j < N; j++) {
       double dx = q[j][X] - qix;
       double dy = q[j][Y] - qiy;
@@ -109,21 +132,50 @@ void calc_force_simd(void) {
       piz += df * dz;
     }
     // 内側のループで積算したi粒子への力積を書き戻す
+    vpi = _mm256_set_pd(0.0, piz, piy, pix);
+    _mm256_store_pd(&(p[i][0]), vpi);
+
+    /*
+    上記のコードは、以下のコードをSIMD化したもの
     p[i][X] = pix;
     p[i][Y] = piy;
     p[i][Z] = piz;
+    */
   }
+}
+
+// インテルコンパイラのループ交換最適化阻害のためのダミー変数
+int sum = 0;
+
+/*
+ 受け取った関数を100回繰り返し実行して、実行時間を計測する
+ */
+void measure(void (*pfunc)(), const char *name, int particle_number) {
+  const auto s = std::chrono::system_clock::now();
+  const int LOOP = 100;
+  for (int i = 0; i < LOOP; i++) {
+    sum++; // ループ交換阻害
+    pfunc();
+  }
+  const auto e = std::chrono::system_clock::now();
+  const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(e - s).count();
+  printf("N=%d, %s \t %lld [ms]\n", particle_number, name, elapsed);
 }
 
 int main(void) {
   init();
-  calc_force_simple();
+  measure(calc_force_simple, "simple", N);
   // 計算した運動量pを比較用にp2に保存しておく
   memcpy(p2, p, sizeof(p));
   init();
-  calc_force_simple();
+  measure(calc_force_simd, "simd", N);
   int r = memcmp(p, p2, sizeof(p));
+
   if (r == 0) {
+    // 二つの結果が一致すればOK
     printf("Check OK\n");
+  } else {
+    // そうでなければ、なにかが間違っている。
+    printf("Check Failed\n");
   }
 }
