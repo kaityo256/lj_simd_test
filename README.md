@@ -21,12 +21,11 @@ N=4000, simd     4329 [ms]
 Check OK
 ```
 
-simpleは関数`calc_force_simple`の実行時間を計測したもの。
-simdは関数`calc_force_simd`の実行時間を計測したもの。
+simpleは関数`calc_force_simple`を100回実行するのにかかった時間を計測したもの。上記の結果では4313 ms、つまり4.3秒かかっている。simdは関数`calc_force_simd`を同じ条件で測定したもの。
 
 両者の実行結果が一致すれば「Check OK」、不一致なら「Check Failed」と表示される。
 
-関数`calc_force_simd`は、一部だけSIMD命令が使われている。この関数を「Check OK」の状態を保ちながらSIMD化していき、最終的に二倍以上の実行速度向上を目指す。ディレクトリ`answer`の中に答えとなるファイルがあるが、なるべく見ないでがんばって欲しい。
+関数`calc_force_simd`は、一部だけSIMD命令が使われている。この関数を「Check OK」の状態を保ちながらSIMD化していき、最終的に二倍以上の実行速度向上を目指す(つまり、simdの実行時間をsimpleの半分以下とする)。ディレクトリ`answer`の中に答えとなるファイルがあるが、なるべく見ないでがんばって欲しい。
 
 答えは見ずに、自分の環境でどれだけ実行速度が向上したか確認したければ、`answer`の中でmakeし、`a.out`を実行する。
 
