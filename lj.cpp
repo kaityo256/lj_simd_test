@@ -1,19 +1,19 @@
 #include <chrono>
 #include <cstdio>
 #include <cstring>
-#include <x86intrin.h>
 #include <iostream>
-#include <fstream>
+#include <random>
 #include <sstream>
+#include <x86intrin.h>
 
 enum { X,
        Y,
        Z };
 
-const int ND = 10;                                 // FCCの格子数
-const int N = ND * ND * ND * 4;                    //全粒指数
-double __attribute__((aligned(32))) q[N][4] = {};  //座標
-double __attribute__((aligned(32))) p[N][4] = {};  //運動量
+const int ND = 10;                                // FCCの格子数
+const int N = ND * ND * ND * 4;                   //全粒指数
+double __attribute__((aligned(32))) q[N][4] = {}; //座標
+double __attribute__((aligned(32))) p[N][4] = {}; //運動量
 const double dt = 0.01;
 
 /*
@@ -54,12 +54,19 @@ void init(void) {
       }
     }
   }
-
+  //規則的な座標のままだとデバッグがしづらいので、乱数を使って場所をずらす
+  std::mt19937 mt;
+  std::uniform_real_distribution<> ud(-0.01, 0.01);
+  for (int i = 0; i < N; i++) {
+    q[i][X] += ud(mt);
+    q[i][Y] += ud(mt);
+    q[i][Z] += ud(mt);
+  }
 }
 
 // SIMD化していないシンプルな関数
 void calc_force_simple(void) {
-  for (int i = 0; i < N-1; i++) {
+  for (int i = 0; i < N - 1; i++) {
     // i粒子の座標と運動量を受け取っておく (内側のループでiは変化しないから)
     double qix = q[i][X];
     double qiy = q[i][Y];
@@ -87,7 +94,6 @@ void calc_force_simple(void) {
     p[i][Z] = piz;
   }
 }
-
 
 // SIMD化した関数
 void calc_force_simd(void) {
@@ -148,7 +154,6 @@ void calc_force_simd(void) {
   }
 }
 
-
 // インテルコンパイラのループ交換最適化阻害のためのダミー変数
 int sum = 0;
 
@@ -171,9 +176,9 @@ void measure(void (*pfunc)(), const char *name, int particle_number) {
  運動量を文字列にして返す関数
  後で結果をチェックするのに使う
  */
-std::string p_to_str(void){
-  std::stringstream ss;  
-  for(int i=0;i<N;i++){
+std::string p_to_str(void) {
+  std::stringstream ss;
+  for (int i = 0; i < N; i++) {
     ss << i << " ";
     ss << p[i][X] << " ";
     ss << p[i][Y] << " ";
@@ -181,7 +186,6 @@ std::string p_to_str(void){
   }
   return ss.str();
 }
-
 
 int main(void) {
   // まずSIMD化していない関数の実行時間を測定し、結果を文字列として保存する
