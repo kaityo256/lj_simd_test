@@ -6,7 +6,9 @@
 #include <sstream>
 #include <x86intrin.h>
 
-enum { X, Y, Z };
+enum { X,
+       Y,
+       Z };
 
 const int ND = 10;                                // FCCの格子数
 const int N = ND * ND * ND * 4;                   //全粒指数
@@ -18,7 +20,9 @@ const double dt = 0.01;
  256bit浮動小数点レジスタの中身を表示する関数
  4つの倍精度浮動小数点数(64bit)をまとめたものになっているので、それをバラす
 */
-void print256d(__m256d x) { printf("%f %f %f %f\n", x[3], x[2], x[1], x[0]); }
+void print256d(__m256d x) {
+  printf("%f %f %f %f\n", x[3], x[2], x[1], x[0]);
+}
 
 /*
 　初期化をする関数
@@ -257,20 +261,50 @@ void calc_force_loadstore(void) {
       double qjx_0 = vqj_0[X];
       double qjy_0 = vqj_0[Y];
       double qjz_0 = vqj_0[Z];
-
       double dx_0 = qjx_0 - qix;
       double dy_0 = qjy_0 - qiy;
       double dz_0 = qjz_0 - qiz;
 
+      /*
       double dx_1 = q[j_1][X] - qix;
       double dy_1 = q[j_1][Y] - qiy;
       double dz_1 = q[j_1][Z] - qiz;
+      */
+      __m256d vqj_1 = _mm256_load_pd((double *)(q + j_1));
+      double qjx_1 = vqj_1[X];
+      double qjy_1 = vqj_1[Y];
+      double qjz_1 = vqj_1[Z];
+      double dx_1 = qjx_1 - qix;
+      double dy_1 = qjy_1 - qiy;
+      double dz_1 = qjz_1 - qiz;
+
+      /*
       double dx_2 = q[j_2][X] - qix;
       double dy_2 = q[j_2][Y] - qiy;
       double dz_2 = q[j_2][Z] - qiz;
+      */
+      __m256d vqj_2 = _mm256_load_pd((double *)(q + j_2));
+      double qjx_2 = vqj_2[X];
+      double qjy_2 = vqj_2[Y];
+      double qjz_2 = vqj_2[Z];
+      double dx_2 = qjx_2 - qix;
+      double dy_2 = qjy_2 - qiy;
+      double dz_2 = qjz_2 - qiz;
+
+      /*
       double dx_3 = q[j_3][X] - qix;
       double dy_3 = q[j_3][Y] - qiy;
       double dz_3 = q[j_3][Z] - qiz;
+      */
+
+      __m256d vqj_3 = _mm256_load_pd((double *)(q + j_3));
+      double qjx_3 = vqj_3[X];
+      double qjy_3 = vqj_3[Y];
+      double qjz_3 = vqj_3[Z];
+      double dx_3 = qjx_3 - qix;
+      double dy_3 = qjy_3 - qiy;
+      double dz_3 = qjz_3 - qiz;
+
 
       double r2_0 = dx_0 * dx_0 + dy_0 * dy_0 + dz_0 * dz_0;
       double r6_0 = r2_0 * r2_0 * r2_0;
