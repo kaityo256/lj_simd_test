@@ -247,54 +247,69 @@ void calc_force_loadstore(void) {
       int j_2 = j + 2;
       int j_3 = j + 3;
 
+      // メモリからのロード
+      /*
       double dx_0 = q[j_0][X] - qix;
       double dy_0 = q[j_0][Y] - qiy;
       double dz_0 = q[j_0][Z] - qiz;
-      double r2_0 = dx_0 * dx_0 + dy_0 * dy_0 + dz_0 * dz_0;
-      double r6_0 = r2_0 * r2_0 * r2_0;
-      double df_0 = (24.0 * r6_0 - 48.0) / (r6_0 * r6_0 * r2_0) * dt;
-      p[j_0][X] -= df_0 * dx_0;
-      p[j_0][Y] -= df_0 * dy_0;
-      p[j_0][Z] -= df_0 * dz_0;
-      pix += df_0 * dx_0;
-      piy += df_0 * dy_0;
-      piz += df_0 * dz_0;
+      */
+      __m256d vqj_0 = _mm256_load_pd((double *)(q + j_0));
+      double qjx_0 = vqj_0[X];
+      double qjy_0 = vqj_0[Y];
+      double qjz_0 = vqj_0[Z];
+
+      double dx_0 = qjx_0 - qix;
+      double dy_0 = qjy_0 - qiy;
+      double dz_0 = qjz_0 - qiz;
 
       double dx_1 = q[j_1][X] - qix;
       double dy_1 = q[j_1][Y] - qiy;
       double dz_1 = q[j_1][Z] - qiz;
+      double dx_2 = q[j_2][X] - qix;
+      double dy_2 = q[j_2][Y] - qiy;
+      double dz_2 = q[j_2][Z] - qiz;
+      double dx_3 = q[j_3][X] - qix;
+      double dy_3 = q[j_3][Y] - qiy;
+      double dz_3 = q[j_3][Z] - qiz;
+
+      double r2_0 = dx_0 * dx_0 + dy_0 * dy_0 + dz_0 * dz_0;
+      double r6_0 = r2_0 * r2_0 * r2_0;
+      double df_0 = (24.0 * r6_0 - 48.0) / (r6_0 * r6_0 * r2_0) * dt;
+      pix += df_0 * dx_0;
+      piy += df_0 * dy_0;
+      piz += df_0 * dz_0;
+
       double r2_1 = dx_1 * dx_1 + dy_1 * dy_1 + dz_1 * dz_1;
       double r6_1 = r2_1 * r2_1 * r2_1;
       double df_1 = (24.0 * r6_1 - 48.0) / (r6_1 * r6_1 * r2_1) * dt;
-      p[j_1][X] -= df_1 * dx_1;
-      p[j_1][Y] -= df_1 * dy_1;
-      p[j_1][Z] -= df_1 * dz_1;
       pix += df_1 * dx_1;
       piy += df_1 * dy_1;
       piz += df_1 * dz_1;
 
-      double dx_2 = q[j_2][X] - qix;
-      double dy_2 = q[j_2][Y] - qiy;
-      double dz_2 = q[j_2][Z] - qiz;
       double r2_2 = dx_2 * dx_2 + dy_2 * dy_2 + dz_2 * dz_2;
       double r6_2 = r2_2 * r2_2 * r2_2;
       double df_2 = (24.0 * r6_2 - 48.0) / (r6_2 * r6_2 * r2_2) * dt;
-      p[j_2][X] -= df_2 * dx_2;
-      p[j_2][Y] -= df_2 * dy_2;
-      p[j_2][Z] -= df_2 * dz_2;
       pix += df_2 * dx_2;
       piy += df_2 * dy_2;
       piz += df_2 * dz_2;
 
-      double dx_3 = q[j_3][X] - qix;
-      double dy_3 = q[j_3][Y] - qiy;
-      double dz_3 = q[j_3][Z] - qiz;
       double r2_3 = dx_3 * dx_3 + dy_3 * dy_3 + dz_3 * dz_3;
       double r6_3 = r2_3 * r2_3 * r2_3;
       double df_3 = (24.0 * r6_3 - 48.0) / (r6_3 * r6_3 * r2_3) * dt;
+
+      p[j_0][X] -= df_0 * dx_0;
+      p[j_0][Y] -= df_0 * dy_0;
+      p[j_0][Z] -= df_0 * dz_0;
+      p[j_1][X] -= df_1 * dx_1;
+      p[j_1][Y] -= df_1 * dy_1;
+      p[j_1][Z] -= df_1 * dz_1;
+      p[j_2][X] -= df_2 * dx_2;
+      p[j_2][Y] -= df_2 * dy_2;
+      p[j_2][Z] -= df_2 * dz_2;
       p[j_3][X] -= df_3 * dx_3;
       p[j_3][Y] -= df_3 * dy_3;
       p[j_3][Z] -= df_3 * dz_3;
+
       pix += df_3 * dx_3;
       piy += df_3 * dy_3;
       piz += df_3 * dz_3;
