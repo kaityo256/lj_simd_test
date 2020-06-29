@@ -6,9 +6,7 @@
 #include <sstream>
 #include <x86intrin.h>
 
-enum { X,
-       Y,
-       Z };
+enum { X, Y, Z };
 
 const int ND = 10;                                // FCCの格子数
 const int N = ND * ND * ND * 4;                   //全粒指数
@@ -20,9 +18,7 @@ const double dt = 0.01;
  256bit浮動小数点レジスタの中身を表示する関数
  4つの倍精度浮動小数点数(64bit)をまとめたものになっているので、それをバラす
 */
-void print256d(__m256d x) {
-  printf("%f %f %f %f\n", x[3], x[2], x[1], x[0]);
-}
+void print256d(__m256d x) { printf("%f %f %f %f\n", x[3], x[2], x[1], x[0]); }
 
 /*
 　初期化をする関数
@@ -305,7 +301,6 @@ void calc_force_loadstore(void) {
       double dy_3 = qjy_3 - qiy;
       double dz_3 = qjz_3 - qiz;
 
-
       double r2_0 = dx_0 * dx_0 + dy_0 * dy_0 + dz_0 * dz_0;
       double r6_0 = r2_0 * r2_0 * r2_0;
       double df_0 = (24.0 * r6_0 - 48.0) / (r6_0 * r6_0 * r2_0) * dt;
@@ -331,18 +326,69 @@ void calc_force_loadstore(void) {
       double r6_3 = r2_3 * r2_3 * r2_3;
       double df_3 = (24.0 * r6_3 - 48.0) / (r6_3 * r6_3 * r2_3) * dt;
 
+      /*
       p[j_0][X] -= df_0 * dx_0;
       p[j_0][Y] -= df_0 * dy_0;
       p[j_0][Z] -= df_0 * dz_0;
+      */
+
+      __m256d vpj_0 = _mm256_load_pd((double *)(p + j_0));
+      double pjx_0 = vpj_0[X];
+      double pjy_0 = vpj_0[Y];
+      double pjz_0 = vpj_0[Z];
+      pjx_0 -= df_0 * dx_0;
+      pjy_0 -= df_0 * dy_0;
+      pjz_0 -= df_0 * dz_0;
+      vpj_0 = _mm256_set_pd(0.0, pjz_0, pjy_0, pjx_0);
+      _mm256_store_pd((double *)(p + j_0), vpj_0);
+
+      /*
       p[j_1][X] -= df_1 * dx_1;
       p[j_1][Y] -= df_1 * dy_1;
       p[j_1][Z] -= df_1 * dz_1;
+      */
+
+      __m256d vpj_1 = _mm256_load_pd((double *)(p + j_1));
+      double pjx_1 = vpj_1[X];
+      double pjy_1 = vpj_1[Y];
+      double pjz_1 = vpj_1[Z];
+      pjx_1 -= df_1 * dx_1;
+      pjy_1 -= df_1 * dy_1;
+      pjz_1 -= df_1 * dz_1;
+      vpj_1 = _mm256_set_pd(0.0, pjz_1, pjy_1, pjx_1);
+      _mm256_store_pd((double *)(p + j_1), vpj_1);
+
+      /*
       p[j_2][X] -= df_2 * dx_2;
       p[j_2][Y] -= df_2 * dy_2;
       p[j_2][Z] -= df_2 * dz_2;
+      */
+
+      __m256d vpj_2 = _mm256_load_pd((double *)(p + j_2));
+      double pjx_2 = vpj_2[X];
+      double pjy_2 = vpj_2[Y];
+      double pjz_2 = vpj_2[Z];
+      pjx_2 -= df_2 * dx_2;
+      pjy_2 -= df_2 * dy_2;
+      pjz_2 -= df_2 * dz_2;
+      vpj_2 = _mm256_set_pd(0.0, pjz_2, pjy_2, pjx_2);
+      _mm256_store_pd((double *)(p + j_2), vpj_2);
+
+      /*
       p[j_3][X] -= df_3 * dx_3;
       p[j_3][Y] -= df_3 * dy_3;
       p[j_3][Z] -= df_3 * dz_3;
+      */
+
+      __m256d vpj_3 = _mm256_load_pd((double *)(p + j_3));
+      double pjx_3 = vpj_3[X];
+      double pjy_3 = vpj_3[Y];
+      double pjz_3 = vpj_3[Z];
+      pjx_3 -= df_3 * dx_3;
+      pjy_3 -= df_3 * dy_3;
+      pjz_3 -= df_3 * dz_3;
+      vpj_3 = _mm256_set_pd(0.0, pjz_3, pjy_3, pjx_3);
+      _mm256_store_pd((double *)(p + j_3), vpj_3);
 
       pix += df_3 * dx_3;
       piy += df_3 * dy_3;
@@ -501,8 +547,7 @@ int main(void) {
 
   // 次にSIMD化した関数の実行時間を測定し、結果を文字列として保存する
   init();
-  // measure(calc_force_simd, "simd", N);
-  measure(calc_force_loadstore, "loadstore", N);
+  measure(calc_force_simd, "simd", N);
   std::string simd = p_to_str();
 
   if (simple == simd) {
