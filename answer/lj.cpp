@@ -652,20 +652,19 @@ void calc_force_step_3_1(void) {
 
       //力の計算
       double r2_0 = dx_0 * dx_0 + dy_0 * dy_0 + dz_0 * dz_0;
-      double r6_0 = r2_0 * r2_0 * r2_0;
-      double df_0 = (24.0 * r6_0 - 48.0) / (r6_0 * r6_0 * r2_0) * dt;
-
       double r2_1 = dx_1 * dx_1 + dy_1 * dy_1 + dz_1 * dz_1;
-      double r6_1 = r2_1 * r2_1 * r2_1;
-      double df_1 = (24.0 * r6_1 - 48.0) / (r6_1 * r6_1 * r2_1) * dt;
-
       double r2_2 = dx_2 * dx_2 + dy_2 * dy_2 + dz_2 * dz_2;
-      double r6_2 = r2_2 * r2_2 * r2_2;
-      double df_2 = (24.0 * r6_2 - 48.0) / (r6_2 * r6_2 * r2_2) * dt;
-
       double r2_3 = dx_3 * dx_3 + dy_3 * dy_3 + dz_3 * dz_3;
-      double r6_3 = r2_3 * r2_3 * r2_3;
-      double df_3 = (24.0 * r6_3 - 48.0) / (r6_3 * r6_3 * r2_3) * dt;
+      __m256d vr2 = _mm256_set_pd(r2_3, r2_2, r2_1, r2_0);
+      const __m256d vc24 = _mm256_set_pd(24 * dt, 24 * dt, 24 * dt, 24 * dt);
+      const __m256d vc48 = _mm256_set_pd(48 * dt, 48 * dt, 48 * dt, 48 * dt);
+      __m256d vr6 = vr2 * vr2 * vr2;
+      __m256d vdf = (vc24 * vr6 - vc48) / (vr6 * vr6 * vr2);
+
+      double df_0 = vdf[0];
+      double df_1 = vdf[1];
+      double df_2 = vdf[2];
+      double df_3 = vdf[3];
 
       // メモリへの書き戻し
       __m256d vpj_0 = _mm256_load_pd((double *)(p + j_0));
