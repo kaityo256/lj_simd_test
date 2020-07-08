@@ -790,7 +790,10 @@ void calc_force_step_3_2(void) {
       double df_3 = vdf[3];
 
       // メモリへの書き戻し
+      __m256d vdf_0 = _mm256_permute4x64_pd(vdf, 0);
       __m256d vpj_0 = _mm256_load_pd((double *)(p + j_0));
+      vpj_0 -= vdf_0 * vdr_0;
+      /*
       double pjx_0 = vpj_0[X];
       double pjy_0 = vpj_0[Y];
       double pjz_0 = vpj_0[Z];
@@ -798,36 +801,25 @@ void calc_force_step_3_2(void) {
       pjy_0 -= df_0 * dy_0;
       pjz_0 -= df_0 * dz_0;
       vpj_0 = _mm256_set_pd(0.0, pjz_0, pjy_0, pjx_0);
+      */
       _mm256_store_pd((double *)(p + j_0), vpj_0);
 
+      __m256d vdf_1 =
+          _mm256_permute4x64_pd(vdf, 1 * 64 + 1 * 16 + 1 * 4 + 1 * 1);
       __m256d vpj_1 = _mm256_load_pd((double *)(p + j_1));
-      double pjx_1 = vpj_1[X];
-      double pjy_1 = vpj_1[Y];
-      double pjz_1 = vpj_1[Z];
-      pjx_1 -= df_1 * dx_1;
-      pjy_1 -= df_1 * dy_1;
-      pjz_1 -= df_1 * dz_1;
-      vpj_1 = _mm256_set_pd(0.0, pjz_1, pjy_1, pjx_1);
+      vpj_1 -= vdf_1 * vdr_1;
       _mm256_store_pd((double *)(p + j_1), vpj_1);
 
+      __m256d vdf_2 =
+          _mm256_permute4x64_pd(vdf, 2 * 64 + 2 * 16 + 2 * 4 + 2 * 1);
       __m256d vpj_2 = _mm256_load_pd((double *)(p + j_2));
-      double pjx_2 = vpj_2[X];
-      double pjy_2 = vpj_2[Y];
-      double pjz_2 = vpj_2[Z];
-      pjx_2 -= df_2 * dx_2;
-      pjy_2 -= df_2 * dy_2;
-      pjz_2 -= df_2 * dz_2;
-      vpj_2 = _mm256_set_pd(0.0, pjz_2, pjy_2, pjx_2);
+      vpj_2 -= vdf_2 * vdr_2;
       _mm256_store_pd((double *)(p + j_2), vpj_2);
 
+      __m256d vdf_3 =
+          _mm256_permute4x64_pd(vdf, 3 * 64 + 3 * 16 + 3 * 4 + 3 * 1);
       __m256d vpj_3 = _mm256_load_pd((double *)(p + j_3));
-      double pjx_3 = vpj_3[X];
-      double pjy_3 = vpj_3[Y];
-      double pjz_3 = vpj_3[Z];
-      pjx_3 -= df_3 * dx_3;
-      pjy_3 -= df_3 * dy_3;
-      pjz_3 -= df_3 * dz_3;
-      vpj_3 = _mm256_set_pd(0.0, pjz_3, pjy_3, pjx_3);
+      vpj_3 -= vdf_3 * vdr_3;
       _mm256_store_pd((double *)(p + j_3), vpj_3);
 
       // piの運動量の書き戻しをまとめる
