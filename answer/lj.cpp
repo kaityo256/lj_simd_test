@@ -92,7 +92,7 @@ void calc_force_simple(void) {
 }
 
 // まず、ループを4倍展開した関数
-void calc_force_unrolled(void) {
+void calc_force_step_1(void) {
   for (int i = 0; i < N - 1; i++) {
     // i粒子の座標と運動量を受け取っておく (内側のループでiは変化しないから)
 
@@ -211,7 +211,7 @@ void calc_force_unrolled(void) {
 
 // Step 2-3
 // メモリとのロードストアをSIMD化したもの
-void calc_force_loadstore(void) {
+void calc_force_step_2_3(void) {
   for (int i = 0; i < N - 1; i++) {
     // i粒子の座標と運動量を受け取っておく (内側のループでiは変化しないから)
 
@@ -426,7 +426,170 @@ void calc_force_loadstore(void) {
 // Step 2-4
 // メモリとのロードストアをSIMD化した後に、
 // 相対ベクトルを作るところのSIMD化
-void calc_force_relative(void) {
+void calc_force_step_2_4(void) {
+  for (int i = 0; i < N - 1; i++) {
+    // i粒子の座標と運動量を受け取っておく (内側のループでiは変化しないから)
+
+    // 4成分をまとめてロードする
+    __m256d vqi = _mm256_load_pd((double *)(q + i));
+
+    // まとめたまま計算した方が早いが、デバッグのために各成分にバラす (pも同様)
+    double qix = vqi[X];
+    double qiy = vqi[Y];
+    double qiz = vqi[Z];
+
+    /*
+    上記のコードは、以下のコードをSIMD化したもの
+    double qix = q[i][X];
+    double qiy = q[i][Y];
+    double qiz = q[i][Z];
+    */
+
+    __m256d vpi = _mm256_load_pd((double *)(p + i));
+    double pix = vpi[X];
+    double piy = vpi[Y];
+    double piz = vpi[Z];
+
+    /*
+    上記のコードは、以下のコードをSIMD化したもの
+    double pix = p[i][X];
+    double piy = p[i][Y];
+    double piz = p[i][Z];
+    */
+    int j = i + 1;
+    for (; j + 3 < N; j += 4) {
+      int j_0 = j;
+      int j_1 = j + 1;
+      int j_2 = j + 2;
+      int j_3 = j + 3;
+
+      __m256d vqj_0 = _mm256_load_pd((double *)(q + j_0));
+      __m256d vdr_0 = vqj_0 - vqi;
+      double dx_0 = vdr_0[X];
+      double dy_0 = vdr_0[Y];
+      double dz_0 = vdr_0[Z];
+
+      __m256d vqj_1 = _mm256_load_pd((double *)(q + j_1));
+      __m256d vdr_1 = vqj_1 - vqi;
+      double dx_1 = vdr_1[X];
+      double dy_1 = vdr_1[Y];
+      double dz_1 = vdr_1[Z];
+
+      __m256d vqj_2 = _mm256_load_pd((double *)(q + j_2));
+      __m256d vdr_2 = vqj_2 - vqi;
+      double dx_2 = vdr_2[X];
+      double dy_2 = vdr_2[Y];
+      double dz_2 = vdr_2[Z];
+
+      __m256d vqj_3 = _mm256_load_pd((double *)(q + j_3));
+      __m256d vdr_3 = vqj_3 - vqi;
+      double dx_3 = vdr_3[X];
+      double dy_3 = vdr_3[Y];
+      double dz_3 = vdr_3[Z];
+
+      //力の計算
+      double r2_0 = dx_0 * dx_0 + dy_0 * dy_0 + dz_0 * dz_0;
+      double r6_0 = r2_0 * r2_0 * r2_0;
+      double df_0 = (24.0 * r6_0 - 48.0) / (r6_0 * r6_0 * r2_0) * dt;
+
+      double r2_1 = dx_1 * dx_1 + dy_1 * dy_1 + dz_1 * dz_1;
+      double r6_1 = r2_1 * r2_1 * r2_1;
+      double df_1 = (24.0 * r6_1 - 48.0) / (r6_1 * r6_1 * r2_1) * dt;
+
+      double r2_2 = dx_2 * dx_2 + dy_2 * dy_2 + dz_2 * dz_2;
+      double r6_2 = r2_2 * r2_2 * r2_2;
+      double df_2 = (24.0 * r6_2 - 48.0) / (r6_2 * r6_2 * r2_2) * dt;
+
+      double r2_3 = dx_3 * dx_3 + dy_3 * dy_3 + dz_3 * dz_3;
+      double r6_3 = r2_3 * r2_3 * r2_3;
+      double df_3 = (24.0 * r6_3 - 48.0) / (r6_3 * r6_3 * r2_3) * dt;
+
+      // メモリへの書き戻し
+      __m256d vpj_0 = _mm256_load_pd((double *)(p + j_0));
+      double pjx_0 = vpj_0[X];
+      double pjy_0 = vpj_0[Y];
+      double pjz_0 = vpj_0[Z];
+      pjx_0 -= df_0 * dx_0;
+      pjy_0 -= df_0 * dy_0;
+      pjz_0 -= df_0 * dz_0;
+      vpj_0 = _mm256_set_pd(0.0, pjz_0, pjy_0, pjx_0);
+      _mm256_store_pd((double *)(p + j_0), vpj_0);
+
+      __m256d vpj_1 = _mm256_load_pd((double *)(p + j_1));
+      double pjx_1 = vpj_1[X];
+      double pjy_1 = vpj_1[Y];
+      double pjz_1 = vpj_1[Z];
+      pjx_1 -= df_1 * dx_1;
+      pjy_1 -= df_1 * dy_1;
+      pjz_1 -= df_1 * dz_1;
+      vpj_1 = _mm256_set_pd(0.0, pjz_1, pjy_1, pjx_1);
+      _mm256_store_pd((double *)(p + j_1), vpj_1);
+
+      __m256d vpj_2 = _mm256_load_pd((double *)(p + j_2));
+      double pjx_2 = vpj_2[X];
+      double pjy_2 = vpj_2[Y];
+      double pjz_2 = vpj_2[Z];
+      pjx_2 -= df_2 * dx_2;
+      pjy_2 -= df_2 * dy_2;
+      pjz_2 -= df_2 * dz_2;
+      vpj_2 = _mm256_set_pd(0.0, pjz_2, pjy_2, pjx_2);
+      _mm256_store_pd((double *)(p + j_2), vpj_2);
+
+      __m256d vpj_3 = _mm256_load_pd((double *)(p + j_3));
+      double pjx_3 = vpj_3[X];
+      double pjy_3 = vpj_3[Y];
+      double pjz_3 = vpj_3[Z];
+      pjx_3 -= df_3 * dx_3;
+      pjy_3 -= df_3 * dy_3;
+      pjz_3 -= df_3 * dz_3;
+      vpj_3 = _mm256_set_pd(0.0, pjz_3, pjy_3, pjx_3);
+      _mm256_store_pd((double *)(p + j_3), vpj_3);
+
+      // piの運動量の書き戻しをまとめる
+      pix += df_0 * dx_0;
+      piy += df_0 * dy_0;
+      piz += df_0 * dz_0;
+      pix += df_1 * dx_1;
+      piy += df_1 * dy_1;
+      piz += df_1 * dz_1;
+      pix += df_2 * dx_2;
+      piy += df_2 * dy_2;
+      piz += df_2 * dz_2;
+      pix += df_3 * dx_3;
+      piy += df_3 * dy_3;
+      piz += df_3 * dz_3;
+    }
+
+    for (; j < N; j++) {
+      double dx = q[j][X] - qix;
+      double dy = q[j][Y] - qiy;
+      double dz = q[j][Z] - qiz;
+      double r2 = dx * dx + dy * dy + dz * dz;
+      double r6 = r2 * r2 * r2;
+      double df = (24.0 * r6 - 48.0) / (r6 * r6 * r2) * dt;
+      p[j][X] -= df * dx;
+      p[j][Y] -= df * dy;
+      p[j][Z] -= df * dz;
+      pix += df * dx;
+      piy += df * dy;
+      piz += df * dz;
+    }
+    // 内側のループで積算したi粒子への力積を書き戻す
+    vpi = _mm256_set_pd(0.0, piz, piy, pix);
+    _mm256_store_pd(&(p[i][0]), vpi);
+
+    /*
+    上記のコードは、以下のコードをSIMD化したもの
+    p[i][X] = pix;
+    p[i][Y] = piy;
+    p[i][Z] = piz;
+    */
+  }
+}
+
+// Step 3-1
+// 力の計算のSIMD化
+void calc_force_step_3_1(void) {
   for (int i = 0; i < N - 1; i++) {
     // i粒子の座標と運動量を受け取っておく (内側のループでiは変化しないから)
 
@@ -712,7 +875,7 @@ int main(void) {
 
   // 次にSIMD化した関数の実行時間を測定し、結果を文字列として保存する
   init();
-  measure(calc_force_simd, "simd", N);
+  measure(calc_force_step_2_4, "simd", N);
   std::string simd = p_to_str();
 
   if (simple == simd) {
