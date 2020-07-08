@@ -1148,9 +1148,9 @@ void calc_force_simd(void) {
       __m256d tmp2 = _mm256_unpacklo_pd(vdr_2, vdr_3);
       __m256d tmp3 = _mm256_unpackhi_pd(vdr_2, vdr_3);
 
-      __m256d vdx = _mm256_permute2f128_pd(tmp0, tmp2, 0x20);
-      __m256d vdy = _mm256_permute2f128_pd(tmp1, tmp3, 0x20);
-      __m256d vdz = _mm256_permute2f128_pd(tmp0, tmp2, 0x31);
+      __m256d vdx = _mm256_permute2f128_pd(tmp0, tmp2, 2 * 16 + 1 * 0);
+      __m256d vdy = _mm256_permute2f128_pd(tmp1, tmp3, 2 * 16 + 1 * 0);
+      __m256d vdz = _mm256_permute2f128_pd(tmp0, tmp2, 3 * 16 + 1 * 1);
 
       __m256d vr2 = vdx * vdx + vdy * vdy + vdz * vdz;
       __m256d vr6 = vr2 * vr2 * vr2;
@@ -1239,7 +1239,7 @@ int main(void) {
 
   // 次にSIMD化した関数の実行時間を測定し、結果を文字列として保存する
   init();
-  measure(calc_force_step_4, "simd", N);
+  measure(calc_force_simd, "simd", N);
   std::string simd = p_to_str();
 
   if (simple == simd) {
