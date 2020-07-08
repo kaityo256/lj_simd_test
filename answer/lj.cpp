@@ -627,25 +627,25 @@ void calc_force_step_3_1(void) {
       int j_3 = j + 3;
 
       __m256d vqj_0 = _mm256_load_pd((double *)(q + j_0));
-      __m256d vdr_0 = vqi - vqj_0;
+      __m256d vdr_0 = vqj_0 - vqi;
       double dx_0 = vdr_0[X];
       double dy_0 = vdr_0[Y];
       double dz_0 = vdr_0[Z];
 
       __m256d vqj_1 = _mm256_load_pd((double *)(q + j_1));
-      __m256d vdr_1 = vqi - vqj_1;
+      __m256d vdr_1 = vqj_1 - vqi;
       double dx_1 = vdr_1[X];
       double dy_1 = vdr_1[Y];
       double dz_1 = vdr_1[Z];
 
       __m256d vqj_2 = _mm256_load_pd((double *)(q + j_2));
-      __m256d vdr_2 = vqi - vqj_2;
+      __m256d vdr_2 = vqj_2 - vqi;
       double dx_2 = vdr_2[X];
       double dy_2 = vdr_2[Y];
       double dz_2 = vdr_2[Z];
 
       __m256d vqj_3 = _mm256_load_pd((double *)(q + j_3));
-      __m256d vdr_3 = vqi - vqj_3;
+      __m256d vdr_3 = vqj_3 - vqi;
       double dx_3 = vdr_3[X];
       double dy_3 = vdr_3[Y];
       double dz_3 = vdr_3[Z];
@@ -875,7 +875,7 @@ int main(void) {
 
   // 次にSIMD化した関数の実行時間を測定し、結果を文字列として保存する
   init();
-  measure(calc_force_step_2_4, "simd", N);
+  measure(calc_force_step_3_1, "simd", N);
   std::string simd = p_to_str();
 
   if (simple == simd) {
